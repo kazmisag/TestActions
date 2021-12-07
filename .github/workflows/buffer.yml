@@ -1,0 +1,57 @@
+name: bitBuffer CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+  push:
+    branches:
+      - develop
+      - master
+
+if: ${{ github.event_name == 'pull_request' && github.event.action == 'unassigned' }}
+  jobs:
+    build:
+      name: Build & Run
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v2.3.4
+        - name: Install
+          run: sudo apt-get install build-essential
+        - name: Build
+          run: make
+        - name: Run The Test
+          run: make check
+      
+        - name: Upload The Program
+          uses: actions/upload-artifact@v2.2.3
+          with:
+            name: program
+            path: build/test.exe
+
+# targets for master branch
+          release:
+      name: Release
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v2.3.4
+        - name: Install
+          run: |
+            sudo apt-get install zip
+            sudo apt-get install build-essential
+        - name: Build
+          run: make && zip build/program.zip build/test
+        - name: Run The Test
+          run: make check
+        
+        - name: Create Release
+          uses: marvinpinto/action-automatic-releases@v1.1.1
+          with:
+            repo_token: ${{ secrets.GITHUB_TOKEN }}
+            automatic_release_tag: latest
+            prerelease: true
+            title: Latest Version
+            files: build/program.zip
+
